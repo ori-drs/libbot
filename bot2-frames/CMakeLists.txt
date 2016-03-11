@@ -11,6 +11,8 @@ lcmtypes_build()
 find_package(PkgConfig REQUIRED)
 find_package(OpenGL REQUIRED)
 
+option(USE_BOT_VIS "Build bot2-frames with bot2-vis dependency." ON)
+
 list(APPEND OPENGL_LIBRARIES GL)
 set(GLUT_CFLAGS "")
 set(GLUT_LIBRARIES -lglut)
@@ -24,9 +26,9 @@ pkg_check_modules(BOT2_PARAM REQUIRED bot2-param-client)
 add_subdirectory(src)
 add_subdirectory(src/test)
 
-pkg_check_modules(BOT2_VIS bot2-vis)
-if(NOT BOT2_VIS_FOUND)
-    message("bot2-vis not found.  Not building libbot2 renderer")
+
+if(USE_BOT_VIS)
+  add_subdirectory(src/renderer)
 else()
-    add_subdirectory(src/renderer)
+  message("USE_BOT_VIS is OFF.  Not building libbot2 renderer.")
 endif()
