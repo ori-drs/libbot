@@ -10,7 +10,7 @@ lcmtypes_build(JAVA_DEST_DIR ${PROJECT_SOURCE_DIR}/java/src
 
 set(ZLIB_LIBRARIES -lz)
 
-option(USE_BOT_VIS "Build bot2-lcmgl with libbot dependency." ON)
+option(USE_BOT_VIS "Build bot2-lcmgl with bot2-vis dependency." ON)
 
 add_definitions(-std=gnu99)
 
@@ -19,6 +19,8 @@ add_subdirectory(src/bot_lcmgl_render)
 
 if(USE_BOT_VIS)
   add_subdirectory(src/lcmgl-viewer)
+else()
+  message("USE_BOT_VIS is OFF.  Not building lcmgl-viewer.")
 endif()
 
 add_subdirectory(java)
