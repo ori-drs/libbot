@@ -1128,17 +1128,6 @@ void bot_viewer_add_renderer (BotViewer *self, BotRenderer *renderer, int priori
         gtk_box_pack_start (GTK_BOX (self->controls_box), renderer->control_frame,
                             FALSE, TRUE, 0);
         gtk_box_reorder_child (GTK_BOX (self->controls_box), renderer->control_frame, control_idx);       
-        if (which_side==0){
-           gtk_box_pack_start (GTK_BOX (self->controls_box_left), renderer->control_frame,
-                            FALSE, TRUE, 0);
-           gtk_box_reorder_child (GTK_BOX (self->controls_box_left), renderer->control_frame, control_idx);
-        }else{ // new dec 2012:
-           // Add your controls to the left hand side of the viewer - instead of the default:
-           gtk_box_pack_start (GTK_BOX (self->controls_box), renderer->control_frame,
-                            FALSE, TRUE, 0);
-           gtk_box_reorder_child (GTK_BOX (self->controls_box), renderer->control_frame, control_idx);
-        }
-
 
         gtk_widget_show (renderer->expander);
         gtk_widget_show (renderer->widget);
