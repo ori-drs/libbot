@@ -19,6 +19,7 @@
 #include "misc_utils.h"
 #include <lcmtypes/bot2_param.h>
 #include <glib.h>
+#include <locale.h>
 
 #define err(args...) fprintf(stderr, args)
 
@@ -1005,12 +1006,40 @@ static int cast_to_boolean(const char * key, const char * val, int * out)
 static double cast_to_double(const char * key, const char * val, double * out)
 {
   char * end;
-  *out = strtod(val, &end);
-  if (end == val || *end != '\0') {
-    fprintf(stderr, "Error: key \"%s\" (\"%s\") did not cast "
-      "properly to double\n", key, val);
-    return -1;
+
+  // Get length of val
+  unsigned int val_length = strlen(val);
+
+  // Allocate a local version of val, since val is const
+  char* val_local;
+  val_local = (char*) malloc (val_length+1);
+  val_local[val_length] = '\0';
+
+  // Copy the two strings
+  strncpy(val_local, val,val_length);
+
+  // Get the local decimal divider
+  struct lconv * lc;
+  lc = localeconv();
+  char * dec_point = lc->decimal_point;
+
+  // Find the divider in the string
+  char * found_dec = strchr(val_local,'.');
+
+  // Replace char with decimal in current locale
+  if(found_dec != NULL){
+	  (*found_dec) = (*dec_point);
   }
+
+  // Use locale safely
+  *out = strtod(val_local, &end);
+  if (end == val_local || *end != '\0') {
+	fprintf(stderr, "Error: key \"%s\" (\"%s\") did not cast "
+	  "properly to double\n", key, val_local);
+	free(val_local);
+	return -1;
+  }
+  free(val_local);
   return 0;
 }
 
