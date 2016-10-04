@@ -25,6 +25,6 @@ pods_install_libraries(${libname})
 pods_install_headers(${h_files} DESTINATION bot_lcmgl_client)
 
 pods_install_pkg_config_file(bot2-lcmgl-client
-    LIBS -l${libname}
+    LIBS -l${libname} -llcm -lglib-2.0
     REQUIRES ${REQUIRED_PACKAGES}
     VERSION 0.0.1)
