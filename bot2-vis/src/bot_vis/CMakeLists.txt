@@ -19,7 +19,7 @@ endif(APPLE)
 
 target_link_libraries(bot2-vis ${REQUIRED_LIBS})
 
-set(REQUIRED_PACKAGES glib-2.0 gtk+-2.0 gdk-pixbuf-2.0 lcm bot2-core libpng gl glu)
+set(REQUIRED_PACKAGES glib-2.0 gthread-2.0 gtk+-2.0 gdk-pixbuf-2.0 lcm bot2-core libpng gl glu)
 pods_use_pkg_config_packages(bot2-vis ${REQUIRED_PACKAGES})
 
 # set the library API version.  Increment this every time the public API
