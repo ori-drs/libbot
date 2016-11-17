@@ -8,7 +8,7 @@ pods_config_search_paths()
 # automatically build LCM types.  This also defines a number of CMake
 # variables, see cmake/lcmtypes.cmake for details
 include(cmake/lcmtypes.cmake)
-lcmtypes_build()
+lcmtypes_build() #C_AGGREGATE_HEADER bot_param
 
 add_subdirectory(src/param_client)
 add_subdirectory(src/param_server)

@@ -10,7 +10,10 @@
 #include <stdlib.h>
 
 #include <bot_param/param_client.h>
-#include <lcmtypes/bot_param.h>
+#include <lcmtypes/bot_param_request_t.h>
+#include <lcmtypes/bot_param_set_t.h>
+#include <lcmtypes/bot_param_update_t.h>
+#include <lcmtypes/bot_param_entry_t.h>
 
 void param_update_handler(BotParam * old_param,BotParam * new_param, int64_t utime, void *user){
   fprintf(stderr, "some parameters were updated %p!\n",user);

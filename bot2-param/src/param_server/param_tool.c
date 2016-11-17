@@ -16,7 +16,10 @@
 #include "../param_client/param_internal.h"
 #include "../param_client/misc_utils.h"
 
-#include <lcmtypes/bot_param.h>
+#include <lcmtypes/bot_param_request_t.h>
+#include <lcmtypes/bot_param_set_t.h>
+#include <lcmtypes/bot_param_update_t.h>
+#include <lcmtypes/bot_param_entry_t.h>
 
 int main(int argc, char ** argv)
 {
