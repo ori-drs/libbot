@@ -1542,11 +1542,11 @@ int bot_param_set_double_array(BotParam * param, const char * key, double * vals
 
 int bot_param_set_str_array(BotParam * param, const char * key, const char ** vals, int len)
 {
-  g_mutex_lock(param->lock);
+  g_mutex_lock(&param->lock);
 
   BotParamElement* el = find_key(param->root, key, 0);
   if ((el != NULL) && (el->type != BotParamArray)) {
-    g_mutex_unlock(param->lock);
+    g_mutex_unlock(&param->lock);
     return -1;
   }
 
@@ -1559,7 +1559,7 @@ int bot_param_set_str_array(BotParam * param, const char * key, const char ** va
     if (0 == add_value(NULL, el, vals[i])) ++num_set;
   }
 
-  g_mutex_unlock(param->lock);
+  g_mutex_unlock(&param->lock);
   return num_set;
 }
 
