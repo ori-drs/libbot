@@ -1168,8 +1168,6 @@ int main (int argc, char **argv)
     char *hostname_override = NULL;
     char *lcmurl = NULL;
 
-    g_thread_init(NULL);
-
     while ((c = getopt_long (argc, argv, optstring, long_opts, 0)) >= 0)
     {
         switch (c) {
@@ -1271,7 +1269,7 @@ int main (int argc, char **argv)
              pmd);
 
      // setup LCM handler
-     lcmu_glib_mainloop_attach_lcm (pmd->lcm);
+     bot_glib_mainloop_attach_lcm (pmd->lcm);
 
      pmd->info_subs =
          bot_procman_info_t_subscribe(pmd->lcm, "PMD_INFO",
@@ -1294,7 +1292,7 @@ int main (int argc, char **argv)
      // go!
      g_main_loop_run (pmd->mainloop);
 
-     lcmu_glib_mainloop_detach_lcm (pmd->lcm);
+     bot_glib_mainloop_detach_lcm (pmd->lcm);
 
      // cleanup
      signal_pipe_cleanup();

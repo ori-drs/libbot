@@ -1,6 +1,18 @@
-#ifndef _SSOCKET_H
-#define _SSOCKET_H
+#ifndef __bot_ssocket_h__
+#define __bot_ssocket_h__
 
+/**
+ * @defgroup BotCoreSSocket TCP Sockets
+ * @brief Convenience data structure for using a TCP socket
+ * @ingroup BotCoreIO
+ * @include: bot_core/bot_core.h
+ *
+ * TODO
+ *
+ * Linking: `pkg-config --libs bot2-core`
+ *
+ * @{
+ */
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -10,9 +22,9 @@
 extern "C" {
 #endif
 
-typedef struct ssocket ssocket_t;
+typedef struct bot_ssocket bot_ssocket_t;
 
-struct ssocket
+struct bot_ssocket
 {
 	int type;
 	int socket;
@@ -22,28 +34,21 @@ struct ssocket
 
 };
 
-ssocket_t *ssocket_create(void);
-void ssocket_destroy(ssocket_t *s);
-
-// returns < 0 on error
-int ssocket_connect(ssocket_t *s, const char *hostname, int port);
-
-int ssocket_disable_nagle(ssocket_t *s);
-int ssocket_listen(ssocket_t *s, int port, int listenqueue, int localhostOnly);
-ssocket_t *ssocket_accept(ssocket_t *s);
-
-/**
- * ssocket_get_remote_ip:
- *
- * retrieves the IP address of the remote end of the connection.  each octet of
- * the address is stored in a separate array element
- */
-void ssocket_get_remote_ip(ssocket_t *s, int ip[4]);
-
-int ssocket_get_fd(ssocket_t *s);
-
+bot_ssocket_t *bot_ssocket_create(void);
+void bot_ssocket_destroy(bot_ssocket_t *s);
+int bot_ssocket_connect(bot_ssocket_t *s, const char *hostname, int port);
+int bot_ssocket_disable_nagle(bot_ssocket_t *s);
+int bot_ssocket_listen(bot_ssocket_t *s, int port, int listenqueue, int localhostOnly);
+bot_ssocket_t *bot_ssocket_accept(bot_ssocket_t *s);
+void bot_ssocket_get_remote_ip(bot_ssocket_t *s, int *ip);
+int bot_ssocket_get_fd(bot_ssocket_t *s);
 
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
+
 #endif

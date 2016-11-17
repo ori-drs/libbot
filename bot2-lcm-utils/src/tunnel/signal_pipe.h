@@ -1,5 +1,3 @@
-// signal_pipe was copied from bot_core to make lcm_tunnel a standalone pod
-
 #ifndef __bot_signal_pipe_h__
 #define __bot_signal_pipe_h__
 

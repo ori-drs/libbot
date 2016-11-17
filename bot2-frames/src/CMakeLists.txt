@@ -3,6 +3,8 @@ add_definitions(-std=gnu99)
 add_library(bot2-frames SHARED  bot_frames.c)
 set(REQUIRED_LIBS bot2-core bot2-param-client)
 
+include_directories(bot_frames)
+
 target_link_libraries(bot2-frames lcmtypes_bot2-frames)
 pods_use_pkg_config_packages(bot2-frames ${REQUIRED_LIBS})
 list(APPEND REQUIRED_LIBS lcmtypes_bot2-frames)
@@ -13,7 +15,7 @@ set_target_properties(bot2-frames PROPERTIES SOVERSION 2)
 
 # make the header public
 # install it to include/bot2-frames
-pods_install_headers(bot_frames.h DESTINATION bot_frames)
+pods_install_headers(bot_frames/bot_frames.h DESTINATION bot_frames)
 
 # make the library public
 pods_install_libraries(bot2-frames)

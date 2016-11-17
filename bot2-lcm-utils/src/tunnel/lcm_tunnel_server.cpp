@@ -26,7 +26,7 @@ introspect_t * LcmTunnelServer::introspect;
 
 std::list<LcmTunnel *> LcmTunnelServer::clients_list;
 
-ssocket_t * LcmTunnelServer::server_sock;
+bot_ssocket_t * LcmTunnelServer::server_sock;
 GIOChannel * LcmTunnelServer::server_sock_ioc;
 guint LcmTunnelServer::server_sock_sid;
 
@@ -71,12 +71,12 @@ int LcmTunnelServer::initializeServer(tunnel_server_params_t * params_)
   bot_signal_pipe_glib_quit_on_kill(mainloop);
 
   // setup listening socket
-  server_sock = ssocket_create();
-  if (0 != ssocket_listen(server_sock, params.port, 1, 0)) {
+  server_sock = bot_ssocket_create();
+  if (0 != bot_ssocket_listen(server_sock, params.port, 1, 0)) {
     perror("creating server socket");
     return 0;
   }
-  server_sock_ioc = g_io_channel_unix_new(ssocket_get_fd(server_sock));
+  server_sock_ioc = g_io_channel_unix_new(bot_ssocket_get_fd(server_sock));
   server_sock_sid = g_io_add_watch(server_sock_ioc, G_IO_IN, acceptClient, NULL);
   if (params.verbose) {
     printf("listening on port %d\n", params.port);
@@ -103,7 +103,7 @@ void LcmTunnelServer::destroyServer()
     delete (*it);
   clients_list.clear();
 
-  ssocket_destroy(server_sock);
+  bot_ssocket_destroy(server_sock);
   introspect_destroy(introspect);
   lcm_destroy(lcm);
   g_main_loop_quit(mainloop);
@@ -112,7 +112,7 @@ void LcmTunnelServer::destroyServer()
 
 int LcmTunnelServer::acceptClient(GIOChannel *source, GIOCondition cond, void *user_data)
 {
-  ssocket_t *client_sock = ssocket_accept(server_sock);
+  bot_ssocket_t *client_sock = bot_ssocket_accept(server_sock);
   if (!client_sock)
     return TRUE;
   LcmTunnel * tunnel_client = new LcmTunnel(params.verbose, NULL);

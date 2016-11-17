@@ -13,7 +13,7 @@ list(APPEND REQUIRED_LIBS lcmtypes_bot2-param)
 set_target_properties(bot2-param-client PROPERTIES SOVERSION 1)
 
 # make the header public
-pods_install_headers(param_client.h param_util.h DESTINATION bot_param)
+pods_install_headers(bot_param/param_client.h bot_param/param_util.h DESTINATION bot_param)
 
 # make the library public
 pods_install_libraries(bot2-param-client)

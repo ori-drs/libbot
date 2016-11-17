@@ -2,6 +2,7 @@ add_definitions(-std=gnu99)
 
 add_executable(bot-procman-deputy
     lcm_util.c
+    timestamp.c
     procinfo.c
     procman.c
     procman_deputy.c

@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 #include <bot_param/param_client.h>
-#include <lcmtypes/bot2_param.h>
+#include <lcmtypes/bot_param.h>
 #include "../param_client/param_internal.h"
 
 static void _on_param_update(const lcm_recv_buf_t *rbuf, const char * channel, const bot_param_update_t * msg,

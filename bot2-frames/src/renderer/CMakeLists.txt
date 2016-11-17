@@ -4,7 +4,8 @@ add_library(bot2-frames-renderers SHARED
     coord_frames_renderer.c articulated_body_renderer.c frame_modifier_renderer.c)
   
 set(REQUIRED_PACKAGES bot2-core bot2-param-client bot2-vis)
-  
+
+include_directories(../bot_frames ../)
 
 pods_use_pkg_config_packages(bot2-frames-renderers ${REQUIRED_PACKAGES})
 target_link_libraries(bot2-frames-renderers bot2-frames
@@ -17,7 +18,7 @@ set_target_properties(bot2-frames-renderers PROPERTIES SOVERSION 1)
 
 # make the header public
 # install it to include/bot_frames
-pods_install_headers(bot_frames_renderers.h DESTINATION bot_frames)
+pods_install_headers(../bot_frames/bot_frames_renderers.h DESTINATION bot_frames)
 
 # make the library public
 pods_install_libraries(bot2-frames-renderers)

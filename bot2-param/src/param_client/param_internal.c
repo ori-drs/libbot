@@ -14,10 +14,10 @@
 #include <ctype.h>
 #include <assert.h>
 #include <bot_core/lcm_util.h>
-#include "param_client.h"
+#include "bot_param/param_client.h"
 #include "param_internal.h"
 #include "misc_utils.h"
-#include <lcmtypes/bot2_param.h>
+#include <lcmtypes/bot_param.h>
 #include <glib.h>
 #include <locale.h>
 
@@ -97,7 +97,7 @@ struct _BotParamElement {
 
 struct _BotParam {
   BotParamElement * root;
-  GMutex * lock;
+  GMutex lock;
   int64_t server_id;
   int64_t sequence_number;
 
@@ -612,7 +612,7 @@ static int write_container(BotParamElement * el, int indent, FILE * f)
  * f. */
 int bot_param_write(BotParam * param, FILE * f)
 {
-  g_mutex_lock(param->lock);
+  g_mutex_lock(&param->lock);
   BotParamElement * child, *root;
 
   root = param->root;
@@ -624,11 +624,11 @@ int bot_param_write(BotParam * param, FILE * f)
       write_array(child, 0, f);
     else {
       fprintf(stderr, "Error: unknown child (%d)\n", child->type);
-      g_mutex_unlock(param->lock);
+      g_mutex_unlock(&param->lock);
       return -1;
     }
   }
-  g_mutex_unlock(param->lock);
+  g_mutex_unlock(&param->lock);
   return 0;
 }
 
@@ -684,14 +684,10 @@ static BotParam * _bot_param_new(void)
   root = new_element(NULL);
   root->type = BotParamContainer;
 
-  if (!g_thread_supported ())
-    g_thread_init (NULL);
-
-
   BotParam * param;
   param = calloc(1, sizeof(BotParam));
   param->root = root;
-  param->lock = g_mutex_new();
+  g_mutex_init(&param->lock);
   param->server_id = -1;
   param->sequence_number = 0;
 
@@ -709,7 +705,6 @@ static void _update_handler_t_destroy(void * data, void * user)
 void bot_param_destroy(BotParam * param)
 {
   free_element(param->root);
-  g_mutex_free(param->lock);
 
   if (param->update_callbacks != NULL) {
     g_list_foreach(param->update_callbacks, _update_handler_t_destroy, NULL);
@@ -725,9 +720,9 @@ void bot_param_add_update_subscriber(BotParam *param,
   update_handler_t * uh = g_slice_new0(update_handler_t);
   uh->callback_func = callback_func;
   uh->user = user;
-  g_mutex_lock(param->lock);
+  g_mutex_lock(&param->lock);
   param->update_callbacks = g_list_append(param->update_callbacks, uh);
-  g_mutex_unlock(param->lock);
+  g_mutex_unlock(&param->lock);
 
 }
 
@@ -768,13 +763,13 @@ static void _on_param_update(const lcm_recv_buf_t *rbuf, const char * channel, c
   _dispatch_update_callbacks(param,new_params, rbuf->recv_utime);
 
   //swap the root;
-  g_mutex_lock(param->lock);
+  g_mutex_lock(&param->lock);
   param->sequence_number = msg->sequence_number;
   BotParamElement * root = new_params->root;
   new_params->root = param->root;
   param->root = root;
   bot_param_destroy(new_params);
-  g_mutex_unlock(param->lock);
+  g_mutex_unlock(&param->lock);
 
 
 }
@@ -1048,21 +1043,21 @@ static double cast_to_double(const char * key, const char * val, double * out)
 
 int bot_param_has_key(BotParam *param, const char *key)
 {
-  g_mutex_lock(param->lock);
+  g_mutex_lock(&param->lock);
   int ret = (find_key(param->root, key, 1) != NULL);
-  g_mutex_unlock(param->lock);
+  g_mutex_unlock(&param->lock);
   return ret;
 }
 
 int bot_param_get_num_subkeys(BotParam * param, const char * containerKey)
 {
-  g_mutex_lock(param->lock);
+  g_mutex_lock(&param->lock);
 
   BotParamElement* el = param->root;
   if ((NULL != containerKey) && (0 < strlen(containerKey)))
     el = find_key(param->root, containerKey, 1);
   if (NULL == el) {
-    g_mutex_unlock(param->lock);
+    g_mutex_unlock(&param->lock);
     return -1;
   }
 
@@ -1071,7 +1066,7 @@ int bot_param_get_num_subkeys(BotParam * param, const char * containerKey)
   for (child = el->children; child; child = child->next)
     ++count;
 
-  g_mutex_unlock(param->lock);
+  g_mutex_unlock(&param->lock);
 
   return count;
 }
@@ -1079,13 +1074,13 @@ int bot_param_get_num_subkeys(BotParam * param, const char * containerKey)
 char **
 bot_param_get_subkeys(BotParam * param, const char * containerKey)
 {
-  g_mutex_lock(param->lock);
+  g_mutex_lock(&param->lock);
 
   BotParamElement* el = param->root;
   if ((NULL != containerKey) && (0 < strlen(containerKey)))
     el = find_key(param->root, containerKey, 1);
   if (NULL == el) {
-    g_mutex_unlock(param->lock);
+    g_mutex_unlock(&param->lock);
     return NULL;
   }
 
@@ -1101,65 +1096,65 @@ bot_param_get_subkeys(BotParam * param, const char * containerKey)
     result[i] = strdup(child->name);
     i++;
   }
-  g_mutex_unlock(param->lock);
+  g_mutex_unlock(&param->lock);
   return result;
 }
 
 int bot_param_get_int(BotParam * param, const char * key, int * val)
 {
-  g_mutex_lock(param->lock);
+  g_mutex_lock(&param->lock);
 
   BotParamElement * el = find_key(param->root, key, 1);
   if (!el || el->type != BotParamArray || el->num_values < 1) {
-    g_mutex_unlock(param->lock);
+    g_mutex_unlock(&param->lock);
     return -1;
   }
   int ret = cast_to_int(key, el->values[0], val);
 
-  g_mutex_unlock(param->lock);
+  g_mutex_unlock(&param->lock);
   return ret;
 }
 
 int bot_param_get_boolean(BotParam * param, const char * key, int * val)
 {
-  g_mutex_lock(param->lock);
+  g_mutex_lock(&param->lock);
   BotParamElement * el = find_key(param->root, key, 1);
   if (!el || el->type != BotParamArray || el->num_values < 1) {
-    g_mutex_unlock(param->lock);
+    g_mutex_unlock(&param->lock);
     return -1;
   }
 
   int ret = cast_to_boolean(key, el->values[0], val);
-  g_mutex_unlock(param->lock);
+  g_mutex_unlock(&param->lock);
   return ret;
 }
 
 int bot_param_get_double(BotParam * param, const char * key, double * val)
 {
-  g_mutex_lock(param->lock);
+  g_mutex_lock(&param->lock);
 
   BotParamElement * el = find_key(param->root, key, 1);
   if (!el || el->type != BotParamArray || el->num_values < 1) {
-    g_mutex_unlock(param->lock);
+    g_mutex_unlock(&param->lock);
     return -1;
   }
   double ret = cast_to_double(key, el->values[0], val);
 
-  g_mutex_unlock(param->lock);
+  g_mutex_unlock(&param->lock);
   return ret;
 }
 
 int bot_param_get_str(BotParam * param, const char * key, char ** val)
 {
-  g_mutex_lock(param->lock);
+  g_mutex_lock(&param->lock);
 
   BotParamElement * el = find_key(param->root, key, 1);
   if (!el || el->type != BotParamArray || el->num_values < 1) {
-    g_mutex_unlock(param->lock);
+    g_mutex_unlock(&param->lock);
     return -1;
   }
   *val = strdup(el->values[0]);
-  g_mutex_unlock(param->lock);
+  g_mutex_unlock(&param->lock);
   return 0;
 }
 
@@ -1209,11 +1204,11 @@ char *bot_param_get_str_or_fail(BotParam *param, const char *key)
 
 int bot_param_get_int_array(BotParam * param, const char * key, int * vals, int len)
 {
-  g_mutex_lock(param->lock);
+  g_mutex_lock(&param->lock);
 
   BotParamElement * el = find_key(param->root, key, 1);
   if (!el || el->type != BotParamArray) {
-    g_mutex_unlock(param->lock);
+    g_mutex_unlock(&param->lock);
     return -1;
   }
   int i;
@@ -1222,7 +1217,7 @@ int bot_param_get_int_array(BotParam * param, const char * key, int * vals, int 
       break;
     if (cast_to_int(key, el->values[i], vals + i) < 0) {
       err("WARNING: BotParam: cast error parsing int array %s\n", key);
-      g_mutex_unlock(param->lock);
+      g_mutex_unlock(&param->lock);
       return -1;
     }
   }
@@ -1231,7 +1226,7 @@ int bot_param_get_int_array(BotParam * param, const char * key, int * vals, int 
         "         %s\n", i, len, key);
   }
 
-  g_mutex_unlock(param->lock);
+  g_mutex_unlock(&param->lock);
 
   return i;
 }
@@ -1249,11 +1244,11 @@ void bot_param_get_int_array_or_fail(BotParam * param, const char * key, int * v
 
 int bot_param_get_boolean_array(BotParam * param, const char * key, int * vals, int len)
 {
-  g_mutex_lock(param->lock);
+  g_mutex_lock(&param->lock);
 
   BotParamElement * el = find_key(param->root, key, 1);
   if (!el || el->type != BotParamArray) {
-    g_mutex_unlock(param->lock);
+    g_mutex_unlock(&param->lock);
     return -1;
   }
   int i;
@@ -1262,7 +1257,7 @@ int bot_param_get_boolean_array(BotParam * param, const char * key, int * vals, 
       break;
     if (cast_to_boolean(key, el->values[i], vals + i) < 0) {
       err("WARNING: BotParam: cast error parsing boolean array %s\n", key);
-      g_mutex_unlock(param->lock);
+      g_mutex_unlock(&param->lock);
       return -1;
     }
   }
@@ -1271,7 +1266,7 @@ int bot_param_get_boolean_array(BotParam * param, const char * key, int * vals, 
         "         %s\n", i, len, key);
   }
 
-  g_mutex_unlock(param->lock);
+  g_mutex_unlock(&param->lock);
 
   return i;
 }
@@ -1289,11 +1284,11 @@ void bot_param_get_boolean_array_or_fail(BotParam * param, const char * key, int
 
 int bot_param_get_double_array(BotParam * param, const char * key, double * vals, int len)
 {
-  g_mutex_lock(param->lock);
+  g_mutex_lock(&param->lock);
 
   BotParamElement * el = find_key(param->root, key, 1);
   if (!el || el->type != BotParamArray) {
-    g_mutex_unlock(param->lock);
+    g_mutex_unlock(&param->lock);
     return -1;
   }
   int i;
@@ -1302,7 +1297,7 @@ int bot_param_get_double_array(BotParam * param, const char * key, double * vals
       break;
     if (cast_to_double(key, el->values[i], vals + i) < 0) {
       err("WARNING: BotParam: cast error parsing double array %s\n", key);
-      g_mutex_unlock(param->lock);
+      g_mutex_unlock(&param->lock);
       return -1;
     }
   }
@@ -1311,7 +1306,7 @@ int bot_param_get_double_array(BotParam * param, const char * key, double * vals
         "         %s\n", i, len, key);
   }
 
-  g_mutex_unlock(param->lock);
+  g_mutex_unlock(&param->lock);
   return i;
 }
 
@@ -1328,26 +1323,26 @@ void bot_param_get_double_array_or_fail(BotParam * param, const char * key, doub
 
 int bot_param_get_array_len(BotParam *param, const char * key)
 {
-  g_mutex_lock(param->lock);
+  g_mutex_lock(&param->lock);
   BotParamElement * el = find_key(param->root, key, 1);
   if (!el || el->type != BotParamArray) {
-    g_mutex_unlock(param->lock);
+    g_mutex_unlock(&param->lock);
     return -1;
   }
   int ret = el->num_values;
 
-  g_mutex_unlock(param->lock);
+  g_mutex_unlock(&param->lock);
   return ret;
 }
 
 char **
 bot_param_get_str_array_alloc(BotParam * param, const char * key)
 {
-  g_mutex_lock(param->lock);
+  g_mutex_lock(&param->lock);
 
   BotParamElement * el = find_key(param->root, key, 1);
   if (!el || el->type != BotParamArray) {
-    g_mutex_unlock(param->lock);
+    g_mutex_unlock(&param->lock);
     return NULL;
   }
 
@@ -1359,7 +1354,7 @@ bot_param_get_str_array_alloc(BotParam * param, const char * key)
     data[i] = strdup(el->values[i]);
   }
 
-  g_mutex_unlock(param->lock);
+  g_mutex_unlock(&param->lock);
 
   return data;
 }
@@ -1413,13 +1408,13 @@ create_key(BotParamElement * el, const char * key)
 
 static int set_value(BotParam * param, const char * key, const char * val)
 {
-  g_mutex_lock(param->lock);
+  g_mutex_lock(&param->lock);
 
   BotParamElement * el = find_key(param->root, key, 0);
   if (el == NULL)
     el = create_key(param->root, key);
   else if (el->type != BotParamArray) {
-    g_mutex_unlock(param->lock);
+    g_mutex_unlock(&param->lock);
     return -1;
   }
 
@@ -1430,7 +1425,7 @@ static int set_value(BotParam * param, const char * key, const char * val)
     el->values[0] = strdup(val);
   }
 
-  g_mutex_unlock(param->lock);
+  g_mutex_unlock(&param->lock);
   return 1;
 }
 
@@ -1567,27 +1562,27 @@ int bot_param_set_str_array(BotParam * param, const char * key, const char ** va
 
 int64_t bot_param_get_server_id(BotParam * param)
 {
-  g_mutex_lock(param->lock);
+  g_mutex_lock(&param->lock);
   int64_t ret = param->server_id;
-  g_mutex_unlock(param->lock);
+  g_mutex_unlock(&param->lock);
   return ret;
 }
 
 int bot_param_get_seqno(BotParam * param)
 {
-  g_mutex_lock(param->lock);
+  g_mutex_lock(&param->lock);
   int ret = param->sequence_number;
-  g_mutex_unlock(param->lock);
+  g_mutex_unlock(&param->lock);
   return ret;
 }
 
 static BotParam *global_param = NULL;
-static GStaticMutex bot_param_global_mutex = G_STATIC_MUTEX_INIT;
+static GMutex bot_param_global_mutex;
 
 BotParam*
 bot_param_get_global(lcm_t * lcm, int keep_updated)
 {
-  g_static_mutex_lock(&bot_param_global_mutex);
+  g_mutex_lock(&bot_param_global_mutex);
 
   if (lcm == NULL)
     lcm = bot_lcm_get_global(NULL);
@@ -1603,10 +1598,10 @@ bot_param_get_global(lcm_t * lcm, int keep_updated)
   }
 
   BotParam *result = global_param;
-  g_static_mutex_unlock(&bot_param_global_mutex);
+  g_mutex_unlock(&bot_param_global_mutex);
   return result;
 
-  fail: g_static_mutex_unlock(&bot_param_global_mutex);
+  fail: g_mutex_unlock(&bot_param_global_mutex);
   fprintf(stderr, "ERROR: Could not get global BotParam!\n");
   return NULL;
 }
@@ -1614,15 +1609,15 @@ bot_param_get_global(lcm_t * lcm, int keep_updated)
 
 int bot_param_override_local_param(BotParam * param, const char * key, const char * val)
 {
-  g_mutex_lock(param->lock);
+  g_mutex_lock(&param->lock);
   if (param->server_id > 0) {
     fprintf(stderr,
         "ERROR: bot_param_local_override() with key: %s and val %s called on server that is subscribed to updates!\n",
         key, val);
-    g_mutex_unlock(param->lock);
+    g_mutex_unlock(&param->lock);
     return -1;
   }
-  g_mutex_unlock(param->lock);
+  g_mutex_unlock(&param->lock);
 
   if (bot_param_has_key(param, key))
     fprintf(stderr, "BotParam overriding param key:%s with value %s\n", key, val);

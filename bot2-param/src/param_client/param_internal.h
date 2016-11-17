@@ -1,4 +1,4 @@
-#include "param_client.h"
+#include "bot_param/param_client.h"
 
 #define BOT_PARAM_UPDATE_CHANNEL "PARAM_UPDATE"
 #define BOT_PARAM_REQUEST_CHANNEL "PARAM_REQUEST"

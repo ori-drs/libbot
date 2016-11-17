@@ -21,6 +21,7 @@ add_executable(bot-lcm-tunnel
     lcm_tunnel_server.cpp
     signal_pipe.c 
     lcm_util.c
+    timestamp.c
     ${ldpc_sources}
     )
 

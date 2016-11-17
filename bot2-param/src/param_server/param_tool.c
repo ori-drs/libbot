@@ -16,7 +16,7 @@
 #include "../param_client/param_internal.h"
 #include "../param_client/misc_utils.h"
 
-#include <lcmtypes/bot2_param.h>
+#include <lcmtypes/bot_param.h>
 
 int main(int argc, char ** argv)
 {

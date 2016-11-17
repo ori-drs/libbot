@@ -63,9 +63,9 @@ LcmTunnel::LcmTunnel(bool verbose, const char *lcm_channel) :
   init_regex(lcm_channel);
 
   //sendThread stuff
-  sendQueueLock = g_mutex_new();
-  sendQueueCond = g_cond_new();
-  sendThread = g_thread_create(sendThreadFunc, (void *) this, 1, NULL);
+  g_mutex_init(&sendQueueLock);
+  g_cond_init(&sendQueueCond);
+  sendThread = g_thread_new("tunnel_thread", sendThreadFunc, (void *) this);
 
 }
 
@@ -100,21 +100,18 @@ LcmTunnel::~LcmTunnel()
   }
 
   //cleanup the sending thread state
-  g_mutex_lock(sendQueueLock);
+  g_mutex_lock(&sendQueueLock);
   stopSendThread = true;
-  g_cond_broadcast(sendQueueCond);
-  g_mutex_unlock(sendQueueLock);
+  g_cond_broadcast(&sendQueueCond);
+  g_mutex_unlock(&sendQueueLock);
   g_thread_join(sendThread); //wait for thread to exit
 
-  g_mutex_lock(sendQueueLock);
+  g_mutex_lock(&sendQueueLock);
   while (!sendQueue.empty()) {
     delete sendQueue.front();
     sendQueue.pop_front();
   }
-  g_mutex_unlock(sendQueueLock);
-
-  g_mutex_free(sendQueueLock);
-  g_cond_free(sendQueueCond);
+  g_mutex_unlock(&sendQueueLock);
 
 
   if (udp_fd >= 0) {
@@ -152,7 +149,7 @@ void LcmTunnel::closeTCPSocket()
 {
   //  fprintf(stderr, "closing TCP socket\n");
   if (tcp_sock != NULL)
-    ssocket_destroy(tcp_sock);
+    bot_ssocket_destroy(tcp_sock);
   tcp_sock = NULL;
   if (tcp_ioc != NULL)
     g_io_channel_unref(tcp_ioc);
@@ -162,7 +159,7 @@ void LcmTunnel::closeTCPSocket()
   tcp_sid = -1;
 }
 
-int LcmTunnel::connectToClient(lcm_t * lcm_, introspect_t *introspect_, GMainLoop * mainloop_, ssocket_t * sock_,
+int LcmTunnel::connectToClient(lcm_t * lcm_, introspect_t *introspect_, GMainLoop * mainloop_, bot_ssocket_t * sock_,
     tunnel_server_params_t * server_params_)
 { //for a client that connected to this server
   //parameters will be passed over from the client
@@ -179,7 +176,7 @@ int LcmTunnel::connectToClient(lcm_t * lcm_, introspect_t *introspect_, GMainLoo
   snprintf(name, sizeof(name), "%s:%d", inet_ntoa(client_addr.sin_addr), client_port);
   printf("Accepted connection from %s\n", name);
 
-  tcp_ioc = g_io_channel_unix_new(ssocket_get_fd(tcp_sock));
+  tcp_ioc = g_io_channel_unix_new(bot_ssocket_get_fd(tcp_sock));
   tcp_sid = g_io_add_watch(tcp_ioc, G_IO_IN, on_tcp_data, this);
 
   bytes_to_read = 4;
@@ -230,12 +227,12 @@ int LcmTunnel::connectToServer(lcm_t * lcm_, introspect_t *introspect_, GMainLoo
   }
 
   // connect
-  tcp_sock = ssocket_create();
-  if (0 != ssocket_connect(tcp_sock, server_addr_str, port)) {
+  tcp_sock = bot_ssocket_create();
+  if (0 != bot_ssocket_connect(tcp_sock, server_addr_str, port)) {
     perror("connecting");
     return 0;
   }
-  tcp_ioc = g_io_channel_unix_new(ssocket_get_fd(tcp_sock));
+  tcp_ioc = g_io_channel_unix_new(bot_ssocket_get_fd(tcp_sock));
   tcp_sid = g_io_add_watch(tcp_ioc, G_IO_IN, on_tcp_data, this);
 
   //fill out the name info
@@ -255,16 +252,16 @@ int LcmTunnel::connectToServer(lcm_t * lcm_, introspect_t *introspect_, GMainLoo
   uint8_t * msg = (uint8_t *) calloc(msg_sz, sizeof(uint8_t));
   lcm_tunnel_params_t_encode(msg, 0, msg_sz, tun_params_to_send);
   uint32_t msg_sz_n = htonl(msg_sz);
-  if (4 != _fileutils_write_fully(ssocket_get_fd(tcp_sock), &msg_sz_n, 4)) {
+  if (4 != _fileutils_write_fully(bot_ssocket_get_fd(tcp_sock), &msg_sz_n, 4)) {
     perror("sending subscription data");
-    ssocket_destroy(tcp_sock);
+    bot_ssocket_destroy(tcp_sock);
     free(msg);
     lcm_tunnel_params_t_destroy(tun_params_to_send);
     return 0;
   }
-  if (msg_sz != _fileutils_write_fully(ssocket_get_fd(tcp_sock), msg, msg_sz)) {
+  if (msg_sz != _fileutils_write_fully(bot_ssocket_get_fd(tcp_sock), msg, msg_sz)) {
     perror("sending subscription data");
-    ssocket_destroy(tcp_sock);
+    bot_ssocket_destroy(tcp_sock);
     free(msg);
     lcm_tunnel_params_t_destroy(tun_params_to_send);
     return 0;
@@ -463,7 +460,7 @@ int LcmTunnel::on_tcp_data(GIOChannel * source, GIOCondition cond, void *user_da
     self->buf_sz = self->bytes_to_read;
   }
 
-  ssize_t nread = read(ssocket_get_fd(self->tcp_sock), self->buf + self->bytes_read, self->bytes_to_read
+  ssize_t nread = read(bot_ssocket_get_fd(self->tcp_sock), self->buf + self->bytes_read, self->bytes_to_read
       - self->bytes_read);
 
   if (nread <= 0) {
@@ -531,12 +528,12 @@ int LcmTunnel::on_tcp_data(GIOChannel * source, GIOCondition cond, void *user_da
         uint8_t msg[msg_sz];
         lcm_tunnel_params_t_encode(msg, 0, msg_sz, &tp_port_msg);
         uint32_t msg_sz_n = htonl(msg_sz);
-        if (4 != _fileutils_write_fully(ssocket_get_fd(self->tcp_sock), &msg_sz_n, 4)) {
+        if (4 != _fileutils_write_fully(bot_ssocket_get_fd(self->tcp_sock), &msg_sz_n, 4)) {
           perror("sending subscription data");
           LcmTunnelServer::disconnectClient(self);
           return FALSE;
         }
-        if (msg_sz != _fileutils_write_fully(ssocket_get_fd(self->tcp_sock), msg, msg_sz)) {
+        if (msg_sz != _fileutils_write_fully(bot_ssocket_get_fd(self->tcp_sock), msg, msg_sz)) {
           perror("sending subscription data");
           LcmTunnelServer::disconnectClient(self);
           return FALSE;
@@ -653,20 +650,18 @@ gpointer LcmTunnel::sendThreadFunc(gpointer user_data)
 
   LcmTunnel *self = (LcmTunnel*) user_data;
 
-  g_mutex_lock(self->sendQueueLock);
+  g_mutex_lock(&self->sendQueueLock);
   int64_t nextFlushTime = 0;
   while (!self->stopSendThread) {
     if (self->sendQueue.empty()) {
-      g_cond_wait(self->sendQueueCond, self->sendQueueLock);
+      g_cond_wait(&self->sendQueueCond, &self->sendQueueLock);
       nextFlushTime = _timestamp_now() + self->tunnel_params->max_delay_ms * 1000;
       continue;
     }
     int64_t now = _timestamp_now();
     if (self->tunnel_params->max_delay_ms > 0 && self->bytesInQueue < NUM_BYTES_TO_SEND_IMMEDIATELY && nextFlushTime
         > now && !self->flushImmediately) {
-      GTimeVal next_timeout;
-      _timestamp_to_GTimeVal(nextFlushTime, &next_timeout);
-      g_cond_timed_wait(self->sendQueueCond, self->sendQueueLock, &next_timeout);
+      g_cond_wait_until(&self->sendQueueCond, &self->sendQueueLock, nextFlushTime);
 
       continue;
     }
@@ -678,18 +673,18 @@ gpointer LcmTunnel::sendThreadFunc(gpointer user_data)
     tmpQueue.swap(self->sendQueue);
     uint32_t bytesInTmpQueue = self->bytesInQueue;
     self->bytesInQueue = 0;
-    g_mutex_unlock(self->sendQueueLock);
+    g_mutex_unlock(&self->sendQueueLock);
     //release lock for sending
 
     //process whats in the queue
     bool success = self->send_lcm_messages(tmpQueue, bytesInTmpQueue);
 
     //reaquire lock to go around the loop
-    g_mutex_lock(self->sendQueueLock);
+    g_mutex_lock(&self->sendQueueLock);
     if (!success)
       break;
   }
-  g_mutex_unlock(self->sendQueueLock);
+  g_mutex_unlock(&self->sendQueueLock);
 
   g_thread_exit(NULL);
 }
@@ -706,7 +701,7 @@ void LcmTunnel::send_to_remote(const void *data, uint32_t len, const char *lcm_c
 
 void LcmTunnel::send_to_remote(const lcm_recv_buf_t *rbuf, const char *lcm_channel)
 {
-  g_mutex_lock(sendQueueLock);
+  g_mutex_lock(&sendQueueLock);
   TunnelLcmMessage * new_msg = new TunnelLcmMessage(rbuf, lcm_channel);
   bytesInQueue += new_msg->encoded_size;
   sendQueue.push_back(new_msg);
@@ -720,8 +715,8 @@ void LcmTunnel::send_to_remote(const lcm_recv_buf_t *rbuf, const char *lcm_chann
   }
   //hack to not delay time sync messages
   flushImmediately = strcmp(lcm_channel, "TIMESYNC") == 0;
-  g_mutex_unlock(sendQueueLock);
-  g_cond_broadcast(sendQueueCond); //signal to say there is a message waiting
+  g_mutex_unlock(&sendQueueLock);
+  g_cond_broadcast(&sendQueueCond); //signal to say there is a message waiting
 }
 
 void LcmTunnel::on_lcm_message(const lcm_recv_buf_t *rbuf, const char *channel, void *user_data)
@@ -864,7 +859,7 @@ bool LcmTunnel::send_lcm_messages(std::deque<TunnelLcmMessage *> &msgQueue, uint
     free(msgBuf);
   }
   else {
-    int cfd = ssocket_get_fd(tcp_sock);
+    int cfd = bot_ssocket_get_fd(tcp_sock);
     assert(cfd>0);
 
     while (!msgQueue.empty()) {

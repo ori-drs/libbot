@@ -72,7 +72,7 @@ class LcmTunnel {
 public:
   LcmTunnel(bool verbose, const char *channel); //just allocates buffers and whatnot
   int connectToClient(lcm_t * lcm_, introspect_t *introspect_, GMainLoop *
-      mainloop_, ssocket_t * sock_, tunnel_server_params_t *server_params_);
+      mainloop_, bot_ssocket_t * sock_, tunnel_server_params_t *server_params_);
   int connectToServer(lcm_t * lcm_, introspect_t *introspect_, GMainLoop *
       mainloop_, char * server_addr_str, int port, char *
       channels_to_recv, lcm_tunnel_params_t * tunnel_params_,
@@ -108,7 +108,7 @@ private:
 
 
   //tcp socket stuff
-  ssocket_t * tcp_sock;
+  bot_ssocket_t * tcp_sock;
   GIOChannel * tcp_ioc;
   guint tcp_sid;
   void closeTCPSocket();
@@ -127,8 +127,8 @@ private:
   uint32_t minBytesToSendImmediately;
   GThread * sendThread;
   std::deque<TunnelLcmMessage *> sendQueue;
-  GMutex * sendQueueLock;
-  GCond* sendQueueCond; //thread waits on this
+  GMutex sendQueueLock;
+  GCond sendQueueCond; //thread waits on this
   bool flushImmediately;
 
 

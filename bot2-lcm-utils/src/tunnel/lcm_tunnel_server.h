@@ -28,7 +28,7 @@ public:
 
   static std::list<LcmTunnel *> clients_list;
 
-  static ssocket_t * server_sock;
+  static bot_ssocket_t * server_sock;
   static GIOChannel * server_sock_ioc;
   static guint server_sock_sid;
 

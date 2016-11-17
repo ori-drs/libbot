@@ -54,7 +54,7 @@ struct _BotFrames {
   lcm_t *lcm;
   BotParam *bot_param;
 
-  GMutex * mutex;
+  GMutex mutex;
   int num_frames;
   char * root_name;
   GHashTable* frame_handles_by_name;
@@ -79,7 +79,7 @@ static void on_transform_update(const lcm_recv_buf_t *rbuf, const char *channel,
     void *user_data)
 {
   BotFrames * bot_frames = (BotFrames *) user_data;
-  g_mutex_lock(bot_frames->mutex);
+  g_mutex_lock(&bot_frames->mutex);
   BotTrans link_transf;
   bot_trans_set_from_quat_trans(&link_transf, msg->quat, msg->trans);
 
@@ -87,7 +87,7 @@ static void on_transform_update(const lcm_recv_buf_t *rbuf, const char *channel,
   assert(frame_handle != NULL);
   frame_handle->was_updated = 1;
   bot_ctrans_link_update(frame_handle->ctrans_link, &link_transf, msg->utime);
-  g_mutex_unlock(bot_frames->mutex);
+  g_mutex_unlock(&bot_frames->mutex);
 
   _dispatch_update_callbacks(bot_frames, frame_handle->frame_name, frame_handle->relative_to,msg->utime);
 
@@ -97,7 +97,7 @@ static void on_pose_update(const lcm_recv_buf_t *rbuf, const char *channel, cons
     void *user_data)
 {
   BotFrames * bot_frames = (BotFrames *) user_data;
-  g_mutex_lock(bot_frames->mutex);
+  g_mutex_lock(&bot_frames->mutex);
   BotTrans link_transf;
   bot_trans_set_from_quat_trans(&link_transf, msg->orientation, msg->pos);
 
@@ -105,7 +105,7 @@ static void on_pose_update(const lcm_recv_buf_t *rbuf, const char *channel, cons
   assert(frame_handle != NULL);
   frame_handle->was_updated = 1;
   bot_ctrans_link_update(frame_handle->ctrans_link, &link_transf, msg->utime);
-  g_mutex_unlock(bot_frames->mutex);
+  g_mutex_unlock(&bot_frames->mutex);
 
   _dispatch_update_callbacks(bot_frames, frame_handle->frame_name, frame_handle->relative_to,msg->utime);
 
@@ -115,7 +115,7 @@ static void on_frames_update(const lcm_recv_buf_t *rbuf, const char *channel, co
     void *user_data)
 {
   BotFrames * bot_frames = (BotFrames *) user_data;
-  g_mutex_lock(bot_frames->mutex);
+  g_mutex_lock(&bot_frames->mutex);
   BotTrans link_transf;
   bot_trans_set_from_quat_trans(&link_transf, msg->quat, msg->trans);
 
@@ -140,7 +140,7 @@ static void on_frames_update(const lcm_recv_buf_t *rbuf, const char *channel, co
     fprintf(stderr, "Ignoring link update %s->%s, frame was constructed relative to %s\n", msg->frame,
         msg->relative_to, frame_handle->relative_to);
   }
-  g_mutex_unlock(bot_frames->mutex);
+  g_mutex_unlock(&bot_frames->mutex);
 
   _dispatch_update_callbacks(bot_frames, frame_handle->frame_name, frame_handle->relative_to, msg->utime);
 }
@@ -153,9 +153,9 @@ bot_frames_new(lcm_t *lcm, BotParam *bot_param)
 
   self->lcm = lcm;
   self->bot_param = bot_param;
-  self->mutex = g_mutex_new();
+  g_mutex_init(&self->mutex);
   self->num_frames =0;
-  g_mutex_lock(self->mutex);
+  g_mutex_lock(&self->mutex);
   // setup the coordinate frame graph
   self->ctrans = bot_ctrans_new();
 
@@ -293,10 +293,10 @@ bot_frames_new(lcm_t *lcm, BotParam *bot_param)
   self->update_subscription = bot_frames_update_t_subscribe(self->lcm, BOT_FRAMES_UPDATE_CHANNEL, on_frames_update, (void*) self);
 
   g_strfreev(frame_names);
-  g_mutex_unlock(self->mutex);
+  g_mutex_unlock(&self->mutex);
   return self;
 
-  fail: g_mutex_unlock(self->mutex);
+  fail: g_mutex_unlock(&self->mutex);
   bot_frames_destroy(self);
   return NULL;
 
@@ -310,7 +310,7 @@ static void _update_handler_t_destroy(void * data, void * user)
 void bot_frames_destroy(BotFrames * bot_frames)
 {
 
-  g_mutex_lock(bot_frames->mutex);
+  g_mutex_lock(&bot_frames->mutex);
 
   bot_ctrans_destroy(bot_frames->ctrans);
   if(bot_frames->update_subscription!=NULL)
@@ -332,8 +332,7 @@ void bot_frames_destroy(BotFrames * bot_frames)
     g_list_foreach(bot_frames->update_callbacks, _update_handler_t_destroy, NULL);
     g_list_free(bot_frames->update_callbacks);
   }
-  g_mutex_unlock(bot_frames->mutex);
-  g_mutex_free(bot_frames->mutex);
+  g_mutex_unlock(&bot_frames->mutex);
   g_slice_free(BotFrames, bot_frames);
 }
 
@@ -355,35 +354,35 @@ void bot_frames_add_update_subscriber(BotFrames *bot_frames, bot_frames_link_upd
   update_handler_t * uh = g_slice_new0(update_handler_t);
   uh->callback_func = callback_func;
   uh->user = user;
-  g_mutex_lock(bot_frames->mutex);
+  g_mutex_lock(&bot_frames->mutex);
   bot_frames->update_callbacks = g_list_append(bot_frames->update_callbacks, uh);
-  g_mutex_unlock(bot_frames->mutex);
+  g_mutex_unlock(&bot_frames->mutex);
 
 }
 
 int bot_frames_get_latest_timestamp(BotFrames * bot_frames, 
                                     const char *from_frame, const char *to_frame, int64_t *timestamp){
 
-    g_mutex_lock(bot_frames->mutex);
+    g_mutex_lock(&bot_frames->mutex);
     int status = bot_ctrans_get_trans_latest_timestamp(bot_frames->ctrans, from_frame, to_frame, timestamp);
-    g_mutex_unlock(bot_frames->mutex);
+    g_mutex_unlock(&bot_frames->mutex);
     return status;
 }
 
 int bot_frames_get_trans_with_utime(BotFrames *bot_frames, const char *from_frame, const char *to_frame, int64_t utime,
     BotTrans *result)
 {
-  g_mutex_lock(bot_frames->mutex);
+  g_mutex_lock(&bot_frames->mutex);
   int status = bot_ctrans_get_trans(bot_frames->ctrans, from_frame, to_frame, utime, result);
-  g_mutex_unlock(bot_frames->mutex);
+  g_mutex_unlock(&bot_frames->mutex);
   return status;
 }
 
 int bot_frames_get_trans(BotFrames *bot_frames, const char *from_frame, const char *to_frame, BotTrans *result)
 {
-  g_mutex_lock(bot_frames->mutex);
+  g_mutex_lock(&bot_frames->mutex);
   int status = bot_ctrans_get_trans_latest(bot_frames->ctrans, from_frame, to_frame, result);
-  g_mutex_unlock(bot_frames->mutex);
+  g_mutex_unlock(&bot_frames->mutex);
   return status;
 }
 
@@ -428,17 +427,17 @@ int bot_frames_get_trans_mat_4x4_with_utime(BotFrames *bot_frames, const char *f
 int bot_frames_get_trans_latest_timestamp(BotFrames *bot_frames, const char *from_frame, const char *to_frame,
     int64_t *timestamp)
 {
-  g_mutex_lock(bot_frames->mutex);
+  g_mutex_lock(&bot_frames->mutex);
   int status = bot_ctrans_get_trans_latest_timestamp(bot_frames->ctrans, from_frame, to_frame, timestamp);
-  g_mutex_unlock(bot_frames->mutex);
+  g_mutex_unlock(&bot_frames->mutex);
   return status;
 }
 
 int bot_frames_have_trans(BotFrames *bot_frames, const char *from_frame, const char *to_frame)
 {
-  g_mutex_lock(bot_frames->mutex);
+  g_mutex_lock(&bot_frames->mutex);
   int status = bot_ctrans_have_trans(bot_frames->ctrans, from_frame, to_frame);
-  g_mutex_unlock(bot_frames->mutex);
+  g_mutex_unlock(&bot_frames->mutex);
   return status;
 }
 
@@ -464,14 +463,14 @@ int bot_frames_rotate_vec(BotFrames *bot_frames, const char *from_frame, const c
 
 int bot_frames_get_n_trans(BotFrames *bot_frames, const char *from_frame, const char *to_frame, int nth_from_latest)
 {
-  g_mutex_lock(bot_frames->mutex);
+  g_mutex_lock(&bot_frames->mutex);
   BotCTransLink *link = bot_ctrans_get_link(bot_frames->ctrans, from_frame, to_frame);
   int n_trans;
   if (!link)
     n_trans = 0;
   else
     n_trans = bot_ctrans_link_get_n_trans(link);
-  g_mutex_unlock(bot_frames->mutex);
+  g_mutex_unlock(&bot_frames->mutex);
 
   return n_trans;
 }
@@ -482,7 +481,7 @@ int bot_frames_get_n_trans(BotFrames *bot_frames, const char *from_frame, const 
 int bot_frames_get_nth_trans(BotFrames *bot_frames, const char *from_frame, const char *to_frame, int nth_from_latest,
     BotTrans *btrans, int64_t *timestamp)
 {
-  g_mutex_lock(bot_frames->mutex);
+  g_mutex_lock(&bot_frames->mutex);
   BotCTransLink *link = bot_ctrans_get_link(bot_frames->ctrans, from_frame, to_frame);
   int status;
   if (!link)
@@ -493,19 +492,19 @@ int bot_frames_get_nth_trans(BotFrames *bot_frames, const char *from_frame, cons
       bot_trans_invert(btrans);
     }
   }
-  g_mutex_unlock(bot_frames->mutex);
+  g_mutex_unlock(&bot_frames->mutex);
   return status;
 }
 const char * bot_frames_get_relative_to(BotFrames * bot_frames, const char * frame_name)
 {
   const char * rel_to = NULL;
-  g_mutex_lock(bot_frames->mutex);
+  g_mutex_lock(&bot_frames->mutex);
   //get a reference to the frame_handle
   frame_handle_t * frame_handle = (frame_handle_t *) g_hash_table_lookup(bot_frames->frame_handles_by_name, frame_name);
   //check to see if it was successful
   if (frame_handle != NULL)
     rel_to = frame_handle->relative_to;
-  g_mutex_unlock(bot_frames->mutex);
+  g_mutex_unlock(&bot_frames->mutex);
   return rel_to;
 }
 
@@ -516,9 +515,9 @@ const char * bot_frames_get_root_name(BotFrames * bot_frames)
 
 int bot_frames_get_num_frames(BotFrames * bot_frames)
 {
-  g_mutex_lock(bot_frames->mutex);
+  g_mutex_lock(&bot_frames->mutex);
   int num_frames = bot_frames->num_frames;
-  g_mutex_unlock(bot_frames->mutex);
+  g_mutex_unlock(&bot_frames->mutex);
   return num_frames;
 }
 
@@ -526,7 +525,7 @@ char ** bot_frames_get_frame_names(BotFrames * bot_frames)
 {
   int num_frames = bot_frames_get_num_frames(bot_frames);
 
-  g_mutex_lock(bot_frames->mutex);
+  g_mutex_lock(&bot_frames->mutex);
   char ** frames = calloc(num_frames + 1, sizeof(char*));
 
   GHashTableIter iter;
@@ -537,12 +536,12 @@ char ** bot_frames_get_frame_names(BotFrames * bot_frames)
     frame_handle_t * han = (frame_handle_t *) value;
     frames[han->frame_num] = strdup(han->frame_name);
   }
-  g_mutex_unlock(bot_frames->mutex);
+  g_mutex_unlock(&bot_frames->mutex);
   return frames;
 }
 
 static BotFrames *global_bot_frames = NULL;
-static GStaticMutex bot_frames_global_mutex = G_STATIC_MUTEX_INIT;
+static GMutex bot_frames_global_mutex;
 
 BotFrames*
 bot_frames_get_global(lcm_t *lcm, BotParam *bot_param)
@@ -552,7 +551,7 @@ bot_frames_get_global(lcm_t *lcm, BotParam *bot_param)
   if (bot_param == NULL)
     bot_param = bot_param_get_global(lcm, 0);
 
-  g_static_mutex_lock(&bot_frames_global_mutex);
+  g_mutex_lock(&bot_frames_global_mutex);
   if (global_bot_frames == NULL) {
     global_bot_frames = bot_frames_new(lcm, bot_param);
     if (!global_bot_frames)
@@ -560,10 +559,10 @@ bot_frames_get_global(lcm_t *lcm, BotParam *bot_param)
   }
 
   BotFrames *result = global_bot_frames;
-  g_static_mutex_unlock(&bot_frames_global_mutex);
+  g_mutex_unlock(&bot_frames_global_mutex);
   return result;
 
-  fail: g_static_mutex_unlock(&bot_frames_global_mutex);
+  fail: g_mutex_unlock(&bot_frames_global_mutex);
   fprintf(stderr, "ERROR: Could not get global bot_frames!\n");
   return NULL;
 }

@@ -290,7 +290,7 @@ int bot_gtk_param_widget_add_text_entry (BotGtkParamWidget *pw,
     switch(ui_hints) {
         case BOT_GTK_PARAM_WIDGET_ENTRY:
             w = gtk_entry_new ();
-            gtk_entry_set_text (GTK_SPIN_BUTTON(w), initial_value);
+            gtk_entry_set_text (GTK_ENTRY(GTK_SPIN_BUTTON(w)), initial_value);
             break;
         default:
             err("ERROR: param_widget_add_text_entry - bad ui_hints\n");

@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "param_util.h"
+#include "bot_param/param_util.h"
 
 #define PLANAR_LIDAR_PREFIX "planar_lidars"
 #define CAMERA_PREFIX "cameras"
