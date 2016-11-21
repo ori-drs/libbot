@@ -32,9 +32,11 @@ target_link_libraries(param-tester bot_param_client)
 add_executable(bot-param-dump ../../bot2-param/src/param_tester/param_dump.c)
 target_link_libraries(bot-param-dump bot_param_client)
 
+# Install library and executables
 install(TARGETS bot_param_client param-tester bot-param-dump bot-param-server bot-param-tool
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION})
+# Install header files
 install(FILES ${client_h_files}
         DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})

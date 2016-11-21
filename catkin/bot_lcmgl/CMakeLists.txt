@@ -18,25 +18,29 @@ catkin_package(
 
 include_directories(include ../../bot2-lcmgl/src ../../bot2-lcmgl/src/bot_lcmgl_client ../../bot2-lcmgl/src/bot_lcmgl_renderer ${GLIB2_INCLUDE_DIRS} ${ZLIB_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
 
+# Clinet
 add_library(bot2-lcmgl-client SHARED ../../bot2-lcmgl/src/bot_lcmgl_client/lcmgl.c)
 target_link_libraries(bot2-lcmgl-client ${ZLIB_LIBRARIES} ${GLIB2_LIBRARIES} ${catkin_LIBRARIES})
 
+# Renderer
 add_library(bot2-lcmgl-renderer SHARED ../../bot2-lcmgl/src/bot_lcmgl_render/lcmgl_bot_renderer.c ../../bot2-lcmgl/src/bot_lcmgl_render/lcmgl_decode.c)
 target_link_libraries(bot2-lcmgl-renderer ${OPENGL_LIBRARIES} ${catkin_LIBRARIES})
 
+# Viewer
 add_executable(bot-lcmgl-viewer ../../bot2-lcmgl/src/lcmgl-viewer/main.c ../../bot2-lcmgl/src/lcmgl-viewer/udp_util.c ../../bot2-lcmgl/src/lcmgl-viewer/view_menu.c)
 target_link_libraries(bot-lcmgl-viewer bot2-lcmgl-renderer -lglut)
 
+# Install libraries
 install(TARGETS bot2-lcmgl-client bot2-lcmgl-renderer bot-lcmgl-viewer
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION})
+# Install client and rendered header files (into non-standard directories)
 install(FILES ../../bot2-lcmgl/src/bot_lcmgl_client/lcmgl.h
         DESTINATION ${CATKIN_GLOBAL_INCLUDE_DESTINATION}/bot_lcmgl_client)
 install(FILES ../../bot2-lcmgl/src/bot_lcmgl_render/lcmgl_decode.h ../../bot2-lcmgl/src/bot_lcmgl_render/lcmgl_bot_renderer.h
         DESTINATION ${CATKIN_GLOBAL_INCLUDE_DESTINATION}/bot_lcmgl_render)
 
-install(DIRECTORY ../../bot2-lcmgl/python/src/
-  DESTINATION ${CATKIN_GLOBAL_PYTHON_DESTINATION}
-  PATTERN ".svn" EXCLUDE)
+# Install python modules
+install(DIRECTORY ../../bot2-lcmgl/python/src/ DESTINATION ${CATKIN_GLOBAL_PYTHON_DESTINATION})
 

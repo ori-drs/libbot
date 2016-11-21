@@ -19,12 +19,15 @@ set(src ../../bot2-lcm-utils/src)
 
 include_directories(${src}/who ${src}/tunnel ${GLIB2_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
 
+# Log filter
 add_executable(bot-lcm-logfilter ${src}/logfilter/lcm-logfilter.c)
 target_link_libraries(bot-lcm-logfilter ${catkin_LIBRARIES} ${GLIB2_LIBRARIES})
 
+# Log splice
 add_executable(bot-lcm-logsplice  ${src}/logsplice/lcm-logsplice.c)
 target_link_libraries(bot-lcm-logsplice  ${catkin_LIBRARIES} ${GLIB2_LIBRARIES})
 
+# Who
 add_executable(bot-lcm-who ${src}/who/lcm-who.c ${src}/who/signal_pipe.c)
 target_link_libraries(bot-lcm-who  ${catkin_LIBRARIES} ${GLIB2_LIBRARIES})
 
@@ -41,6 +44,7 @@ set(ldpc_sources
     ${src}/tunnel/ldpc/tools.cpp
     )
 
+# Tunnel
 add_executable(bot-lcm-tunnel
     ${src}/tunnel/introspect.c
     ${src}/tunnel/lcm_tunnel_params_t.c
@@ -57,6 +61,7 @@ add_executable(bot-lcm-tunnel
     )
 target_link_libraries(bot-lcm-tunnel ${catkin_LIBRARIES} ${GLIB2_LIBRARIES})
 
+# LDPC wrapper test
 add_executable(ldpc-wrapper-test
     ${src}/tunnel/ldpc/ldpc_wrapper_test.cpp
     ${ldpc_sources}
@@ -65,12 +70,14 @@ add_executable(ldpc-wrapper-test
 set_source_files_properties(${src}/tunnel/introspect.c ${src}/tunnel/lcm_tunnel_params_t.c ${src}/tunnel/ssocket.c ${src}/tunnel/signal_pipe.c ${src}/tunnel/lcm_util.c ${src}/tunnel/timestamp.c
     PROPERTIES COMPILE_FLAGS "-std=gnu99")
 
+# Install executables
 install(TARGETS bot-lcm-logfilter bot-lcm-logsplice bot-lcm-who bot-lcm-tunnel ldpc-wrapper-test
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION})
+# Install bot spy
 install(PROGRAMS src/bot-spy
         DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION})
-install(DIRECTORY ../../bot2-lcm-utils/python/src/
-  DESTINATION ${CATKIN_GLOBAL_PYTHON_DESTINATION}
-  PATTERN ".svn" EXCLUDE)
+
+# Install python modules
+install(DIRECTORY ../../bot2-lcm-utils/python/src/ DESTINATION ${CATKIN_GLOBAL_PYTHON_DESTINATION})
