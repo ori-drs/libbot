@@ -84,6 +84,17 @@ Requirements
   the Pods core policy. If no other "build" directory is found, it will default to:
   libbot2/build/  
 
+Catkin
+======
+libbot now supports catkin.
+
+Please add/remove any/all lcm types, executables and libraries to respective the catkin cmake files (catkin/...).
+
+To build:
+1. Clone the code into a catkin workspace (catkin_tools environmnet is recommended).
+2. Use rosdep to install dependencies (see https://bitbucket.org/vivan/lcm_catkin for catkin-compatible lcm)
+2. Compile the workspace: 'catkin build -s' or 'catkin_make' (depending on which tools you use).
+
 Uninstallation
 ==============
 
