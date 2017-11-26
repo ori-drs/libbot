@@ -19,3 +19,7 @@ bot_lcmgl_data_t
 AddJAVA(bot2-lcmgl ../../bot2-lcmgl/java/src/bot_lcmgl/LCMGL.java)
 
 GenerateLCM()
+
+catkin_package(LIBRARIES ${PROJECT_NAME}
+  CATKIN_DEPENDS lcm_catkin
+  INCLUDE_DIRS ${CATKIN_DEVEL_PREFIX}/include)

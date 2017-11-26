@@ -11,6 +11,7 @@ pkg_check_modules(ZLIB REQUIRED zlib)
 pkg_check_modules(OPENGL REQUIRED gl)
 
 catkin_package(
+  INCLUDE_DIRS ../../bot2-lcmgl/src
   LIBRARIES bot2-lcmgl-client bot2-lcmgl-renderer
   CATKIN_DEPENDS bot_lcmgl_lcmtypes bot_vis
   DEPENDS GLIB2 ZLIB OPENGL

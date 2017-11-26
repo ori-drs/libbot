@@ -15,7 +15,7 @@ pkg_check_modules(ZLIB REQUIRED zlib)
 pkg_check_modules(X11 REQUIRED x11)
 
 catkin_package(
-  INCLUDE_DIRS ${JPEG_INCLUDE_DIR}
+  INCLUDE_DIRS ../../bot2-vis/src ${JPEG_INCLUDE_DIR}
   LIBRARIES bot_vis
   CATKIN_DEPENDS bot_core
   DEPENDS GLIB2 OPENGL GLUT JPEG ZLIB X11 GTK

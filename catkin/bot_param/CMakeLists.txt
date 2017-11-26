@@ -8,6 +8,7 @@ bot_param_lcmtypes
 add_definitions(-std=gnu99)
 
 catkin_package(
+  INCLUDE_DIRS  ../../bot2-param/src/param_client
   LIBRARIES bot_param_client
   CATKIN_DEPENDS bot_core bot_param_lcmtypes
 )

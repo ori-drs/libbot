@@ -20,3 +20,7 @@ bot_param_update_t
 )
 
 GenerateLCM()
+
+catkin_package(LIBRARIES ${PROJECT_NAME}
+  CATKIN_DEPENDS lcm_catkin
+  INCLUDE_DIRS ${CATKIN_DEVEL_PREFIX}/include)
