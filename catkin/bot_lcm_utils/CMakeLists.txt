@@ -76,8 +76,10 @@ install(TARGETS bot-lcm-logfilter bot-lcm-logsplice bot-lcm-who bot-lcm-tunnel l
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION})
 # Install bot spy
-install(PROGRAMS src/bot-spy
-        DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION})
+#install(PROGRAMS src/bot-spy
+#        DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION})
+catkin_install_python(PROGRAMS src/bot_spy
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 # Install python modules
 install(DIRECTORY ../../bot2-lcm-utils/python/src/ DESTINATION ${CATKIN_GLOBAL_PYTHON_DESTINATION})
