@@ -12,9 +12,15 @@ if (USE_BOT_VIS)
 endif()
 
 
-add_library(bot2-lcmgl-renderer SHARED ${c_files})
+find_package(OpenGL QUIET)
 
-find_package(OpenGL REQUIRED)
+# If OpenGL cannot be found, output warning and do not build renderer.
+if(NOT ${OpenGL_FOUND})
+  message(WARNING "Cannot find OpenGL, won't build LCMGL Renderer")
+  return()
+endif()
+
+add_library(bot2-lcmgl-renderer SHARED ${c_files})
 target_link_libraries(bot2-lcmgl-renderer ${OPENGL_LIBRARIES} lcmtypes_bot2-lcmgl)
 
 if(REQUIRED_LIBS)
