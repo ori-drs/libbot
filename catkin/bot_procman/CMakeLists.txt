@@ -79,6 +79,7 @@ function(install_python_script script_name python_module_or_file)
     # install it...
     file(COPY ${CMAKE_CURRENT_BINARY_DIR}/${script_name} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
     # Install python modules
+    file(COPY ${PROJECT_BINARY_DIR}/python/build_prefix.py DESTINATION ${PROJECT_BINARY_DIR}/lib/python${pyversion}/dist-packages/bot_procman)
     file(COPY ../../bot2-procman/python/src/ DESTINATION ${PROJECT_BINARY_DIR}/lib/python${pyversion}/dist-packages)
 endfunction()
 install_python_script(bot-procman-sheriff bot_procman.sheriff_gtk.sheriff_gtk)
