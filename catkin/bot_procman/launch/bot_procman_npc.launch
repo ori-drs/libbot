@@ -1,0 +1,3 @@
+<launch>
+  <node pkg="bot_procman" type="bot-procman-deputy" name="deputy_npc" output="screen" args="-n npc" />
+</launch>
