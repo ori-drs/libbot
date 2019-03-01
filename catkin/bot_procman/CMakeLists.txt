@@ -18,8 +18,8 @@ catkin_package(
 include_directories(include ../../bot2-procman/src ../../bot2-procman/src/deputy ${GLIB2_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
 
 # Deputy
-#set (CMAKE_RUNTIME_OUTPUT_DIRECTORY_BCK ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-#set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set (CMAKE_RUNTIME_OUTPUT_DIRECTORY_BCK ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 add_executable(bot-procman-deputy
     ../../bot2-procman/src/deputy/lcm_util.c
     ../../bot2-procman/src/deputy/timestamp.c
@@ -28,13 +28,13 @@ add_executable(bot-procman-deputy
     ../../bot2-procman/src/deputy/procman_deputy.c
     ../../bot2-procman/src/deputy/signal_pipe.c)
 target_link_libraries(bot-procman-deputy util ${GLIB2_LIBRARIES} ${catkin_LIBRARIES})
-#set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY_BCK})
+set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY_BCK})
 
 
+# Test program for listing for deputies
 add_executable(bot-procman-deputy-test-active
     ../../bot2-procman/src/deputy/test-deputy-active.cpp)
 target_link_libraries(bot-procman-deputy-test-active util ${GLIB2_LIBRARIES} ${catkin_LIBRARIES})
-#set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY_BCK})
 
 
 # Build prefix for locating glide files
