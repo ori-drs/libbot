@@ -30,6 +30,13 @@ add_executable(bot-procman-deputy
 target_link_libraries(bot-procman-deputy util ${GLIB2_LIBRARIES} ${catkin_LIBRARIES})
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY_BCK})
 
+
+# Test program for listing for deputies
+add_executable(bot-procman-deputy-test-active
+    ../../bot2-procman/src/deputy/test-deputy-active.cpp)
+target_link_libraries(bot-procman-deputy-test-active util ${GLIB2_LIBRARIES} ${catkin_LIBRARIES})
+
+
 # Build prefix for locating glide files
 file(WRITE ${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_PYTHON_DESTINATION}/bot_procman/build_prefix.py "import inspect, os\nBUILD_PREFIX=os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))), '..', '..', '..', '..'))\n")
 file(WRITE ${PROJECT_BINARY_DIR}/python/build_prefix.py "BUILD_PREFIX='${PROJECT_BINARY_DIR}'\n")
